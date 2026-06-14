@@ -1,0 +1,15 @@
+matplotlib>=3.8.4
+numpy>=1.26.4
+pandas>=2.2.2
+scikit-learn>=1.5.1
+seaborn>=0.13.2
+statsmodels>=0.14.2
+
+mlflow>=2.15.1
+zenml[server]>=0.64.0
+
+requests>=2.31.0
+rich>=13.7.1
+streamlit>=1.35.0
+
+click>=8.1.7
