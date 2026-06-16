@@ -27,13 +27,13 @@ class SimpleTrainTestSplit(DataSplittingTechnique):
 
 class DataSplitter:
     def __init__(self, strategy: DataSplittingTechnique):
-        self.strategy = strategy
+        self._strategy = strategy
     
     def set_strategy(self, strategy: DataSplittingTechnique):
         logging.info("Changing the Splitting strategy.")
-        self.strategy = strategy
+        self._strategy = strategy
 
     def split(self, df: pd.DataFrame, target_col: str) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
         logging.info("Splitting data using the selected strategy.")
-        return self.strategy.split_data(df,target_col)
+        return self._strategy.split_data(df,target_col)
         
