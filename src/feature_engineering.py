@@ -16,67 +16,137 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 
 class FeatureEngineeringStrategy(ABC):
     @abstractmethod
-    def apply_transformation(self,df: pd.DataFrame)->pd.DataFrame:
+    def fit(self, df: pd.DataFrame)->None:
         pass
-
+    
+    @abstractmethod
+    def transform(self,df: pd.DataFrame)->pd.DataFrame:
+        pass
+    
+    def fit_transform(self,df: pd.DataFrame)-> pd.DataFrame:
+        self.fit(df)
+        return self.transform(df)
+    
+    @staticmethod
+    def _validate_features(df: pd.DataFrame, features)->None:
+        missing = set(features) - set(df.columns)
+        if missing:
+                raise KeyError(f"Features not found in dataframe: {sorted(missing)}")
+    
 class LogTransformation(FeatureEngineeringStrategy):
     def __init__(self,features):
-        self.features = features
+        self.features = list(features)
+        self._is_fitted = False
     
-    def apply_transformation(self, df: pd.DataFrame)-> pd.DataFrame:
-        logging.info(f"Applying Log Transformation to features {self.features}")
+    def fit(self, df: pd.DataFrame)->None:
+        self._validate_features(df,self.features)
+
+        for feature in self.features:
+            if(df[feature]<=-1).any():
+                raise ValueError(f"Feature '{feature}' contains values <= -1. log1p cannot be applied.")
+        self._is_fitted = True
+    def transform(self, df: pd.DataFrame)->pd.DataFrame:
+        if not self._is_fitted:
+            raise RuntimeError("Log transformation has not been fitted yet")
+        self._validate_features(df, self.features)
+        
+        logging.info(f"Applying log transformation to features: {self.features}")
         df_transformed = df.copy()
         for feature in self.features:
-            df_transformed[feature] = np.log1p(df[feature])
-        logging.info("Log Transformed completed")
+            df_transformed[feature] = np.log1p(df_transformed[feature])
+        logging.info("Log transformation completed.")
         return df_transformed
+
+
 
 class StandardScaling(FeatureEngineeringStrategy):
     def __init__(self, features):
-        self.features = features
+        self.features = list(features)
         self.scaler = StandardScaler()
+        self._is_fitted = False
 
-    def apply_transformation(self, df: pd.DataFrame)-> pd.DataFrame:
+    def fit(self, df: pd.DataFrame)->None:
+        self._validate_features(df,self.features)
+        
+        logging.info(f"Fitting StandardScaler on features: {self.features}")
+        self.scaler.fit(df[self.features])
+        self._is_fitted = True
+
+    def transform(self, df: pd.DataFrame)-> pd.DataFrame:
+        if not self._is_fitted:
+            raise RuntimeError("StandardScaler has not been fitted yet.")
+        self._validate_features(df,self.features)
+        
         logging.info(f"Applying standard scaling to features: {self.features}")
         df_transformed = df.copy()
-        df_transformed[self.features] = self.scaler.fit_transform(df[self.features])
+        df_transformed[self.features] = self.scaler.transform(df[self.features])
         logging.info("Standard scaling completed.")
         return df_transformed
 
 class MinMaxScaling(FeatureEngineeringStrategy):
     def __init__(self, features,feature_range = (0,1)):
-        self.features = features
+        self.features = list(features)
         self.scaler = MinMaxScaler(feature_range=feature_range)
+        self._is_fitted = False
     
-    def apply_transformation(self, df: pd.DataFrame)->pd.DataFrame:
+    def fit(self, df: pd.DataFrame)->None:
+        self._validate_features(df,self.features)
+        
+        logging.info(f"Fitting MinMaxScaler on features: {self.features}")
+        self.scaler.fit(df[self.features])
+        self._is_fitted = True
+
+    def transform(self, df: pd.DataFrame)->pd.DataFrame:
+        if not self._is_fitted:
+            raise RuntimeError("MinMaxScaler has not been fitted yet.")
+        self._validate_features(df,self.features)
+        
         logging.info(f"Applying Min-Max scaling to features: {self.features} with range {self.scaler.feature_range}")
         df_transformed = df.copy()
-        df_transformed[self.features] = self.scaler.fit_transform(df[self.features])
+        df_transformed[self.features] = self.scaler.transform(df[self.features])
         logging.info("Min-Max scaling completed.")
         return df_transformed
     
 class OneHotEncoding(FeatureEngineeringStrategy):
     def __init__(self, features):
-        self.features = features
-        self.encoder = OneHotEncoder(sparse_output=False, drop="first")
+        self.features = list(features)
+        self.encoder = OneHotEncoder(sparse_output=False, drop="first",handle_unknown="ignore")
+        self._is_fitted = False
+
+    def fit(self, df: pd.DataFrame)->None:
+        self._validate_features(df,self.features)
+        
+        logging.info(f"Fitting OneHotEncoder on features: {self.features}")
+        self.encoder.fit(df[self.features])
+        self._is_fitted = True
     
-    def apply_transformation(self, df: pd.DataFrame) -> pd.DataFrame:
+    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        if not self._is_fitted:
+            raise RuntimeError("OneHotEncoder has not been fitted")
+        self._validate_features(df,self.features)
+        
         logging.info(f"Applying one-hot encoding to features: {self.features}")
-        df_transformed = df.copy()
-        encoded_df = pd.DataFrame(self.encoder.fit_transform(df[self.features]),columns=self.encoder.get_feature_names_out(self.features),)
-        df_transformed = df_transformed.drop(columns=self.features).reset_index(drop=True)
-        df_transformed = pd.concat([df_transformed, encoded_df], axis=1)
+        encoded_array = self.encoder.transform(df[self.features])
+        encoded_df = pd.DataFrame(encoded_array,columns=self.encoder.get_feature_names_out(self.features),index=df.index,)
+        df_transformed = df.drop(columns=self.features)
+        result = pd.concat([df_transformed, encoded_df],axis=1)
         logging.info("One-hot encoding completed.")
-        return df_transformed
+
+        return result
 
 class FeatureEngineering:
     def __init__(self, strategy: FeatureEngineeringStrategy):
         self._strategy = strategy
 
-    def set_strategy(self, strategy: FeatureEngineeringStrategy):
+    def set_strategy(self, strategy: FeatureEngineeringStrategy)->None:
         logging.info("Changing the Feature Engineering strategy.")
         self._strategy = strategy
     
-    def apply_feature_engineering(self,df: pd.DataFrame)->pd.DataFrame:
-        logging.info("Applying feature engineering strategy.")
-        return self._strategy.apply_transformation(df)
+    def fit(self, df: pd.DataFrame)->None:
+        self._strategy.fit(df)
+    
+    def transform(self, df: pd.DataFrame)->pd.DataFrame:
+        return self._strategy.transform(df)
+
+    def fit_transform(self, df: pd.DataFrame)->pd.DataFrame:
+        return self._strategy.fit_transform(df)
