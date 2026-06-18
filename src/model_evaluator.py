@@ -42,11 +42,11 @@ class ModelEvaluator:
         self.strategy = strategy
 
     @property
-    def strategy(self) -> ModelEvalutingStrategy:                   # FIX 1
+    def strategy(self) -> ModelEvalutingStrategy:
         return self._strategy
 
     @strategy.setter
-    def strategy(self, strategy: ModelEvalutingStrategy) -> None:   # FIX 3
+    def strategy(self, strategy: ModelEvalutingStrategy) -> None:
         if not isinstance(strategy, ModelEvalutingStrategy):
             raise TypeError(f"Expected a ModelEvaluatingStrategy, got {type(strategy)}")
         logging.info(f"Strategy updated to: {strategy.__class__.__name__}")
