@@ -15,50 +15,91 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 
 class OutlierDetectionStrategy(ABC):
     @abstractmethod
-    def detect_outliers(self, df: pd.DataFrame)->pd.DataFrame:
+    def detect_outliers(self, df: pd.DataFrame)-> pd.DataFrame:
         pass
 
 class ZScoreOutlierDetection(OutlierDetectionStrategy):
-    def __init__(self, threshold = 3):
+    def __init__(self, threshold: float = 3.0):
+        if threshold <= 0:
+            raise ValueError("Threshold must be positive.")
         self.threshold = threshold
     
+
     def detect_outliers(self, df: pd.DataFrame)-> pd.DataFrame:
         logging.info("Detecting outlier using z-score method.")
-        z_score = np.abs((df-df.mean())/df.std())
+        numeric_df = df.select_dtypes(include=[np.number])
+
+        if numeric_df.empty:
+            raise ValueError("No numeric columns found.")
+        
+        std = numeric_df.std().replace(0, np.nan)
+        z_score = np.abs((numeric_df - numeric_df.mean()) / std)
+
         outlier = z_score > self.threshold
         logging.info(f"Outlier detected using z-score threshold: {self.threshold}")
         return outlier
 
+
 class IQROutlierDetection(OutlierDetectionStrategy):
     def detect_outliers(self, df: pd.DataFrame)-> pd.DataFrame:
         logging.info("Detecting outlier using IQR method")
-        Q1 = df.quantile(0.25)
-        Q3 = df.quantile(0.75)
+        numeric_df = df.select_dtypes(include=[np.number])
+
+        if numeric_df.empty:
+            raise ValueError("No numeric columns found.")
+
+        Q1 = numeric_df.quantile(0.25)
+        Q3 = numeric_df.quantile(0.75)
         IQR = Q3-Q1
-        outlier = (df<(Q1-1.5*IQR)) | (df>(Q3+1.5*IQR))
+        outlier = (numeric_df<(Q1-1.5*IQR)) | (numeric_df>(Q3+1.5*IQR))
         logging.info("Outlier detected using the IQR method.")
         return outlier
     
+
 class OutlierDetector:
     def __init__(self, strategy: OutlierDetectionStrategy):
-        self._strategy = strategy
+        self.strategy = strategy
     
-    def set_strategy(self, strategy: OutlierDetectionStrategy):
-        logging.info("Applying startegy for outlier detection")
+    @property
+    def strategy(self) -> OutlierDetectionStrategy:
+        return self._strategy
+
+    @strategy.setter
+    def strategy(self, strategy: OutlierDetectionStrategy):
+        if not isinstance(strategy, OutlierDetectionStrategy):
+            raise TypeError(f"Expected an OutlierDetectionStrategy, got {type(strategy)}")
+        logging.info(f"Strategy updated to: {strategy.__class__.__name__}")
         self._strategy = strategy
+
+    def set_strategy(self, strategy: OutlierDetectionStrategy)-> None:
+        self.strategy = strategy
     
     def detect_outliers(self, df: pd.DataFrame)-> pd.DataFrame:
         logging.info("Executing outlier detection strategy")
         return self._strategy.detect_outliers(df)
     
-    def handle_outlier(self, df: pd.DataFrame, method="remove", **kwargs)-> pd.DataFrame:
+    def handle_outlier(self, df: pd.DataFrame, method: str = "remove")-> pd.DataFrame:
         outlier =  self.detect_outliers(df)
+        method = method.lower()
         if method == "remove":
             logging.info("Removing outlier from the dataset.")
-            df_cleaned = df[(~outlier).all(axis = 1)]
+
+            df_cleaned = df[(~outlier).all(axis=1)].copy()
+            removed = len(df) - len(df_cleaned)
+
+            logging.info(f"Removed {removed} outlier row(s). {len(df_cleaned)} row(s) remaining.")
         elif method == "cap":
             logging.info("Capping outliers in the dataset.")
-            df_cleaned = df.clip(lower=df.quantile(0.01), upper=df.quantile(0.99), axis=1)
+
+            numeric_cols = df.select_dtypes(include=[np.number]).columns
+            df_cleaned = df.copy()
+            df_cleaned[numeric_cols] = df_cleaned[numeric_cols].clip(
+                lower=df_cleaned[numeric_cols].quantile(0.01),
+                upper=df_cleaned[numeric_cols].quantile(0.99),
+                axis=0,  # align Series index (columns) with DataFrame columns
+            )
+
+            logging.info("Outliers capped at 1st and 99th percentiles.")
         else:
             logging.warning(f"Unknown method '{method}'. No outlier handling performed.")
             return df
@@ -66,9 +107,16 @@ class OutlierDetector:
         logging.info("Outlier handling completed")
         return df_cleaned
     
-    def visalize_outlier(self, df: pd.DataFrame, features: list):
+    def visualize_outliers(self, df: pd.DataFrame, features: list[str])-> None:
+        missing = [f for f in features if f not in df.columns]
+        if missing:
+            raise ValueError(f"Features not found in DataFrame: {missing}")
+
         logging.info(f"Visualizing outliers for features: {features}")
         for f in features:
+            if not pd.api.types.is_numeric_dtype(df[f]):
+                raise ValueError(f"{f} is not a numeric column.")
+
             plt.figure(figsize=(10,6))
             sns.boxplot(x=df[f])
             plt.title(f"Boxplot of {f}")
