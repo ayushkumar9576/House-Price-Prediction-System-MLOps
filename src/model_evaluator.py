@@ -8,21 +8,11 @@ logger = logging.getLogger(__name__)
 
 class ModelEvalutingStrategy(ABC):
     @abstractmethod
-    def evaluate_model(self, model: RegressorMixin, X_test: pd.DataFrame, y_test: pd.Series)-> dict:
+    def evaluate_model(self, model: RegressorMixin, X_test, y_test: pd.Series)-> dict:
         pass
 
 class RegressionModelEvaluationStrategy(ModelEvalutingStrategy):
-    def evaluate_model(self, model: RegressorMixin, X_test: pd.DataFrame, y_test: pd.Series)-> dict:
-        if not isinstance(X_test, pd.DataFrame):
-            raise TypeError("X_test must be a pandas DataFrame.")
-        if not isinstance(y_test, pd.Series):
-            raise TypeError("y_test must be a pandas Series.")
-        if X_test.empty:
-            raise ValueError("X_test must not be empty.")
-        if y_test.empty:
-            raise ValueError("y_test must not be empty.")
-        if len(X_test) != len(y_test):
-            raise ValueError("X_test and y_test must contain the same number of samples.")
+    def evaluate_model(self, model: RegressorMixin, X_test, y_test: pd.Series)-> dict:
         
         logger.info("Predicting using the trained model")
         y_pred = model.predict(X_test)
@@ -57,7 +47,7 @@ class ModelEvaluator:
         logger.info("Applying strategy for model evaluation.")
         self.strategy = strategy
     
-    def evaluate(self,model: RegressorMixin, X_test: pd.DataFrame, y_test: pd.Series)->dict:
+    def evaluate(self,model: RegressorMixin, X_test, y_test: pd.Series)->dict:
         logger.info("Evaluating the model with specified strategy.")
         return self._strategy.evaluate_model(model,X_test,y_test)
         
