@@ -25,7 +25,11 @@ class DropMissingValuesStrategy(MissingValueHandlingStrategy):
     def handle(self, df: pd.DataFrame)->pd.DataFrame:
         logger.info(f"Dropping missing value with axis = {self.axis} and thresh = {self.thresh}")
         
-        cleaned = df.dropna(axis=self.axis, thresh=self.thresh)
+        kwargs = {"axis": self.axis}
+        if self.thresh is not None:
+            kwargs["thresh"] = self.thresh
+
+        cleaned = df.dropna(**kwargs)
         
         logger.info("Dropped Missing values")
         return cleaned
@@ -53,6 +57,8 @@ class FillMissingValueStrategy(MissingValueHandlingStrategy):
                 if not mode_series.empty:
                     cleaned[c] = cleaned[c].fillna(mode_series.iloc[0])
         elif self.method=="constant":
+            if self.fill_value is None:
+                raise ValueError("fill_value must be provided when method='constant'")
             cleaned = cleaned.fillna(self.fill_value)
         else:
             raise ValueError(f"Unsupported method: {self.method}")
