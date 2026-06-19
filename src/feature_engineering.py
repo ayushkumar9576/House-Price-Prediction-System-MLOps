@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler, OneHotEncoder, StandardScaler
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
 
 class FeatureEngineeringStrategy(ABC):
     @abstractmethod
@@ -50,11 +50,11 @@ class LogTransformation(FeatureEngineeringStrategy):
             raise RuntimeError("Log transformation has not been fitted yet")
         self._validate_features(df, self.features)
         
-        logging.info(f"Applying log transformation to features: {self.features}")
+        logger.info(f"Applying log transformation to features: {self.features}")
         df_transformed = df.copy()
         for feature in self.features:
             df_transformed[feature] = np.log1p(df_transformed[feature])
-        logging.info("Log transformation completed.")
+        logger.info("Log transformation completed.")
         return df_transformed
 
 
@@ -68,7 +68,7 @@ class StandardScaling(FeatureEngineeringStrategy):
     def fit(self, df: pd.DataFrame)->None:
         self._validate_features(df,self.features)
         
-        logging.info(f"Fitting StandardScaler on features: {self.features}")
+        logger.info(f"Fitting StandardScaler on features: {self.features}")
         self.scaler.fit(df[self.features])
         self._is_fitted = True
 
@@ -77,10 +77,10 @@ class StandardScaling(FeatureEngineeringStrategy):
             raise RuntimeError("StandardScaler has not been fitted yet.")
         self._validate_features(df,self.features)
         
-        logging.info(f"Applying standard scaling to features: {self.features}")
+        logger.info(f"Applying standard scaling to features: {self.features}")
         df_transformed = df.copy()
         df_transformed[self.features] = self.scaler.transform(df[self.features])
-        logging.info("Standard scaling completed.")
+        logger.info("Standard scaling completed.")
         return df_transformed
 
 class MinMaxScaling(FeatureEngineeringStrategy):
@@ -92,7 +92,7 @@ class MinMaxScaling(FeatureEngineeringStrategy):
     def fit(self, df: pd.DataFrame)->None:
         self._validate_features(df,self.features)
         
-        logging.info(f"Fitting MinMaxScaler on features: {self.features}")
+        logger.info(f"Fitting MinMaxScaler on features: {self.features}")
         self.scaler.fit(df[self.features])
         self._is_fitted = True
 
@@ -101,10 +101,10 @@ class MinMaxScaling(FeatureEngineeringStrategy):
             raise RuntimeError("MinMaxScaler has not been fitted yet.")
         self._validate_features(df,self.features)
         
-        logging.info(f"Applying Min-Max scaling to features: {self.features} with range {self.scaler.feature_range}")
+        logger.info(f"Applying Min-Max scaling to features: {self.features} with range {self.scaler.feature_range}")
         df_transformed = df.copy()
         df_transformed[self.features] = self.scaler.transform(df[self.features])
-        logging.info("Min-Max scaling completed.")
+        logger.info("Min-Max scaling completed.")
         return df_transformed
     
 class OneHotEncoding(FeatureEngineeringStrategy):
@@ -116,7 +116,7 @@ class OneHotEncoding(FeatureEngineeringStrategy):
     def fit(self, df: pd.DataFrame)->None:
         self._validate_features(df,self.features)
         
-        logging.info(f"Fitting OneHotEncoder on features: {self.features}")
+        logger.info(f"Fitting OneHotEncoder on features: {self.features}")
         self.encoder.fit(df[self.features])
         self._is_fitted = True
     
@@ -125,12 +125,12 @@ class OneHotEncoding(FeatureEngineeringStrategy):
             raise RuntimeError("OneHotEncoder has not been fitted")
         self._validate_features(df,self.features)
         
-        logging.info(f"Applying one-hot encoding to features: {self.features}")
+        logger.info(f"Applying one-hot encoding to features: {self.features}")
         encoded_array = self.encoder.transform(df[self.features])
         encoded_df = pd.DataFrame(encoded_array,columns=self.encoder.get_feature_names_out(self.features),index=df.index,)
         df_transformed = df.drop(columns=self.features)
         result = pd.concat([df_transformed, encoded_df],axis=1)
-        logging.info("One-hot encoding completed.")
+        logger.info("One-hot encoding completed.")
 
         return result
 
@@ -139,7 +139,7 @@ class FeatureEngineering:
         self._strategy = strategy
 
     def set_strategy(self, strategy: FeatureEngineeringStrategy)->None:
-        logging.info("Changing the Feature Engineering strategy.")
+        logger.info("Changing the Feature Engineering strategy.")
         self._strategy = strategy
     
     def fit(self, df: pd.DataFrame)->None:
