@@ -4,7 +4,7 @@ import pandas as pd
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.base import RegressorMixin
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
 
 class ModelEvalutingStrategy(ABC):
     @abstractmethod
@@ -24,16 +24,16 @@ class RegressionModelEvaluationStrategy(ModelEvalutingStrategy):
         if len(X_test) != len(y_test):
             raise ValueError("X_test and y_test must contain the same number of samples.")
         
-        logging.info("Predicting using the trained model")
+        logger.info("Predicting using the trained model")
         y_pred = model.predict(X_test)
 
-        logging.info("Calculating evaluating matrix")
+        logger.info("Calculating evaluating matrix")
         mse = mean_squared_error(y_test,y_pred)
         r2 = r2_score(y_test,y_pred)
 
         metrices = {"Mean Squared Error":mse, "R-Squared":r2}
 
-        logging.info("Evaluating metrics calculated.")
+        logger.info("Evaluating metrics calculated.")
         return metrices
 
 
@@ -49,15 +49,15 @@ class ModelEvaluator:
     def strategy(self, strategy: ModelEvalutingStrategy) -> None:
         if not isinstance(strategy, ModelEvalutingStrategy):
             raise TypeError(f"Expected a ModelEvaluatingStrategy, got {type(strategy)}")
-        logging.info(f"Strategy updated to: {strategy.__class__.__name__}")
+        logger.info(f"Strategy updated to: {strategy.__class__.__name__}")
         self._strategy = strategy
 
 
     def set_strategy(self, strategy: ModelEvalutingStrategy)-> None:
-        logging.info("Applying strategy for model evaluation.")
+        logger.info("Applying strategy for model evaluation.")
         self.strategy = strategy
     
     def evaluate(self,model: RegressorMixin, X_test: pd.DataFrame, y_test: pd.Series)->dict:
-        logging.info("Evaluating the model with specified strategy.")
+        logger.info("Evaluating the model with specified strategy.")
         return self._strategy.evaluate_model(model,X_test,y_test)
         
