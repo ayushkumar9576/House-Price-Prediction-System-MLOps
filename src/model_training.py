@@ -12,7 +12,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
 from sklearn.base import RegressorMixin
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
 
 class ModelBuildingStrategy(ABC):
     @abstractmethod
@@ -38,16 +38,16 @@ class LinearRegressionStrategy(ModelBuildingStrategy):
         if X_train.shape[1] == 0:
             raise ValueError("X_train must contain at least one feature")
 
-        logging.info("Building a linear regression model")
+        logger.info("Building a linear regression model")
         pipeline = Pipeline(
             [
                 ("scaler",StandardScaler()),
                 ("model",LinearRegression()),
             ]
         )
-        logging.info("Training a linear regression model.")
+        logger.info("Training a linear regression model.")
         pipeline.fit(X_train,y_train)
-        logging.info("Model Training Completed.")
+        logger.info("Model Training Completed.")
         return pipeline
     
 class ModelBuilder:
@@ -62,12 +62,12 @@ class ModelBuilder:
     def strategy(self, strategy: ModelBuildingStrategy) -> None:
         if not isinstance(strategy, ModelBuildingStrategy):
             raise TypeError(f"Expected a ModelBuildingStrategy, got {type(strategy)}")
-        logging.info(f"Strategy updated to: {strategy.__class__.__name__}")
+        logger.info(f"Strategy updated to: {strategy.__class__.__name__}")
         self._strategy = strategy
 
     def set_strategy(self, strategy: ModelBuildingStrategy)-> None:
         self.strategy = strategy
     
     def build_model(self, X_train: pd.DataFrame, y_train: pd.Series)-> RegressorMixin:
-        logging.info("Building and training the model using the selected strategy.")
+        logger.info("Building and training the model using the selected strategy.")
         return self._strategy.build_and_train_model(X_train,y_train)
