@@ -42,7 +42,7 @@ class LogTransformation(FeatureEngineeringStrategy):
         self._validate_features(df,self.features)
 
         for feature in self.features:
-            if(df[feature]<=-1).any():
+            if(df[feature] <= -1).any():
                 raise ValueError(f"Feature '{feature}' contains values <= -1. log1p cannot be applied.")
         self._is_fitted = True
     def transform(self, df: pd.DataFrame)->pd.DataFrame:

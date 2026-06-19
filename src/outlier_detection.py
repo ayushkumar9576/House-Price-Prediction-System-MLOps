@@ -96,7 +96,7 @@ class OutlierDetector:
             df_cleaned[numeric_cols] = df_cleaned[numeric_cols].clip(
                 lower=df_cleaned[numeric_cols].quantile(0.01),
                 upper=df_cleaned[numeric_cols].quantile(0.99),
-                axis=1,  # align Series index (columns) with DataFrame columns
+                axis=0,
             )
 
             logger.info("Outliers capped at 1st and 99th percentiles.")

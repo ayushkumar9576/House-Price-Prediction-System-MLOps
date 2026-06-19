@@ -5,6 +5,7 @@ PURPOSE:
 """
 
 import logging
+import os
 import pandas as pd
 from zenml import step
 from src.ingest_data import DataIngestorFactory
@@ -16,7 +17,7 @@ def data_ingestor_step(file_path: str)-> pd.DataFrame:
     logger.info("Ingestion data from a ZIP file using the DataIngestor")
     logger.info("starting data ingestion from : %s",file_path)
 
-    file_extension = ".zip"
+    file_extension = os.path.splitext(file_path)[1].lower()
     data_ingestor = DataIngestorFactory.get_data_ingestor(file_extension)
 
     df = data_ingestor.ingest(file_path)

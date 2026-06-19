@@ -24,10 +24,8 @@ def model_evaluator_step(trained_model: Pipeline, X_test: pd.DataFrame, y_test: 
     
     logger.info("Applying the same preproscessing to the test data")
 
-    X_test_processed = trained_model.named_steps["preprocessor"].transform(X_test)
-
     evaluator = ModelEvaluator(strategy= RegressionModelEvaluationStrategy())
-    evaluation_metrix = evaluator.evaluate(trained_model.named_steps["model"], X_test_processed, y_test)
+    evaluation_metrix = evaluator.evaluate(trained_model, X_test, y_test)
 
     if not isinstance(evaluation_metrix,dict):
         raise ValueError("Evaluation metrics must be returned as a dictionary.")

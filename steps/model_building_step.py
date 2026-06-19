@@ -13,20 +13,24 @@ from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LinearRegression
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
-from zenml import step, ArtifactConfig
+from zenml import step, ArtifactConfig, Model
 from zenml.client import Client
-from zenml import Model
 
 logger = logging.getLogger(__name__)
 
-experinment = Client().active_stack.experiment_tracker
-if experinment is None:
-    raise RuntimeError("No experiment tracker configured on the active ZenML stack")
-
-model = Model(name= "price_predictor", version= None, license= "Apache 2.0", description= "Price Prediction Model For House.",)
-
-@step(enable_cache=False, experiment_tracker= experinment.name, model = model)
-def model_building_step(X_train: pd.DataFrame, y_train: pd.Series)-> Annotated[Pipeline, ArtifactConfig(name="sklearn_pipeline", is_model_artifact=True)]:
+@step(
+    enable_cache=False,
+    model=Model(
+        name="price_predictor",
+        version=None,
+        license="Apache 2.0",
+        description="Price Prediction Model For House.",
+    ),
+)
+def model_building_step(X_train: pd.DataFrame, y_train: pd.Series) -> Annotated[Pipeline, ArtifactConfig(name="sklearn_pipeline", is_model_artifact=True)]:
+    experiment = Client().active_stack.experiment_tracker
+    if experiment is None:
+        raise RuntimeError("No experiment tracker configured on the active ZenML stack")
     if not isinstance(X_train, pd.DataFrame):
         raise TypeError("X_train must be a pandas DataFrame")
     if not isinstance(y_train, pd.Series):
@@ -81,7 +85,7 @@ def model_building_step(X_train: pd.DataFrame, y_train: pd.Series)-> Annotated[P
         raise
     
     finally:
-        if started_run == True:
+        if started_run:
             mlflow.end_run()
 
     return pipeline

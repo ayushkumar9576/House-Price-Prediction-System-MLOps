@@ -13,10 +13,11 @@ class ZipDataIngestor(DataIngestor):
         if not file_path.endswith(".zip"):
             raise ValueError("The provided file is not a zip file")
 
+        extract_dir = os.path.join(os.path.dirname(os.path.abspath(file_path)), "extracted_data")
         with zipfile.ZipFile(file_path,"r") as ref:
-            ref.extractall("extracted_data")
+            ref.extractall(extract_dir)
         
-        extracted_file = os.listdir("extracted_data")
+        extracted_file = os.listdir(extract_dir)
         csv_file = [f for f in extracted_file if f.endswith(".csv")]
 
         if len(csv_file)==0:
@@ -24,7 +25,7 @@ class ZipDataIngestor(DataIngestor):
         if len(csv_file)>1:
             raise ValueError("Multiple CSV file found, need only 1")
         
-        csv_file_path = os.path.join("extracted_data",csv_file[0])
+        csv_file_path = os.path.join(extract_dir,csv_file[0])
         df = pd.read_csv(csv_file_path)
 
         return df
