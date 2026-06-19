@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
 
 class DataSplittingTechnique(ABC):
     @abstractmethod
@@ -18,11 +18,11 @@ class SimpleTrainTestSplit(DataSplittingTechnique):
     def split_data(self, df: pd.DataFrame, target_col: str)-> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
         if target_col not in df.columns:
             raise ValueError(f"Target column '{target_col}' not found.")
-        logging.info("Performing Train-Test Splitting on the data.")
+        logger.info("Performing Train-Test Splitting on the data.")
         X = df.drop(columns=[target_col])
         y = df[target_col]
         X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=self.test_size, random_state=self.random_state)
-        logging.info("Train-Test Split Completed.")
+        logger.info("Train-Test Split Completed.")
         return X_train, X_test, y_train, y_test
 
 class DataSplitter:
@@ -30,10 +30,10 @@ class DataSplitter:
         self._strategy = strategy
     
     def set_strategy(self, strategy: DataSplittingTechnique):
-        logging.info("Changing the Splitting strategy.")
+        logger.info("Changing the Splitting strategy.")
         self._strategy = strategy
 
     def split(self, df: pd.DataFrame, target_col: str) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
-        logging.info("Splitting data using the selected strategy.")
+        logger.info("Splitting data using the selected strategy.")
         return self._strategy.split_data(df,target_col)
         
