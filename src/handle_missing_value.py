@@ -5,10 +5,11 @@ STRATEGIES:
 """
 import logging
 from abc import ABC, abstractmethod
+from typing import Any
 
 import pandas as pd
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
 
 class MissingValueHandlingStrategy(ABC):
     @abstractmethod
@@ -17,26 +18,26 @@ class MissingValueHandlingStrategy(ABC):
 
 
 class DropMissingValuesStrategy(MissingValueHandlingStrategy):
-    def __init__(self, axis = 0, thresh = None):
+    def __init__(self, axis: int = 0, thresh: int|None = None)-> None:
         self.axis = axis
         self.thresh = thresh
     
     def handle(self, df: pd.DataFrame)->pd.DataFrame:
-        logging.info(f"Dropping missing value with axis = {self.axis} and thresh = {self.thresh}")
+        logger.info(f"Dropping missing value with axis = {self.axis} and thresh = {self.thresh}")
         
-        cleaned = df.dropna(    axis=self.axis, thresh=self.thresh)
+        cleaned = df.dropna(axis=self.axis, thresh=self.thresh)
         
-        logging.info("Dropped Missing values")
+        logger.info("Dropped Missing values")
         return cleaned
     
 
 class FillMissingValueStrategy(MissingValueHandlingStrategy):
-    def __init__(self, method = "mean", fill_value = None):
+    def __init__(self, method: str = "mean", fill_value: Any = None)-> None:
         self.method = method
         self.fill_value = fill_value
     
     def handle(self, df: pd.DataFrame)->pd.DataFrame:
-        logging.info(f"Filling missing Values Using method {self.method}")
+        logger.info(f"Filling missing Values Using method {self.method}")
 
         cleaned = df.copy()
         
@@ -50,13 +51,13 @@ class FillMissingValueStrategy(MissingValueHandlingStrategy):
             for c in cleaned.columns:
                 mode_series = df[c].mode()
                 if not mode_series.empty:
-                    cleaned[c] = cleaned[c].fillna(df[c].mode().iloc[0])
+                    cleaned[c] = cleaned[c].fillna(mode_series.iloc[0])
         elif self.method=="constant":
             cleaned = cleaned.fillna(self.fill_value)
         else:
-            logging.info(f"Unknown method {self.method}. No missing values handled")
+            raise ValueError(f"Unsupported method: {self.method}")
 
-        logging.info("Missing values Handled")
+        logger.info("Missing values Handled")
         return cleaned
 
 
@@ -65,11 +66,11 @@ class MissingValueHandler:
         self._strategy = strategy
 
     def set_strategy(self, strategy: MissingValueHandlingStrategy)->None:
-        logging.info("Changing the Handling method.")
+        logger.info("Changing the Handling method.")
         
         self._strategy = strategy
     
     def handle_missing_value(self, df: pd.DataFrame)->pd.DataFrame:
-        logging.info("Executing missing value handling strategy")
+        logger.info("Executing missing value handling strategy")
         
         return self._strategy.handle(df)
