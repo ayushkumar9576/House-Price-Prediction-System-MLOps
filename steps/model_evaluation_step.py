@@ -31,6 +31,6 @@ def model_evaluator_step(trained_model: Pipeline, X_test: pd.DataFrame, y_test: 
         raise ValueError("Evaluation metrics must be returned as a dictionary.")
     
     mse = evaluation_metrix.get("Mean Squared Error", None)
-
-    return evaluation_metrix, mse
+    r2 = evaluation_metrix.get("R-Squared")
+    return r2, mse
 
