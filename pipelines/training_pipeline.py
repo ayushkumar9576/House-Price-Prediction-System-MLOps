@@ -49,7 +49,7 @@ def ml_pipeline():
 
     clean_data = outlier_detection_step(df= engineered_data)
 
-    X_train, X_test, y_train, y_test = data_splitter_step(df= clean_data, target_column= "SalePrice")
+    X_train, X_test, y_train, y_test = data_splitter_step(df= clean_data, target_columns= "SalePrice")
 
     model = model_building_step(X_train, y_train)
 

@@ -15,6 +15,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
 from zenml import step, ArtifactConfig, Model
 from zenml.client import Client
+from zenml.enums import ArtifactType
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +28,7 @@ logger = logging.getLogger(__name__)
         description="Price Prediction Model For House.",
     ),
 )
-def model_building_step(X_train: pd.DataFrame, y_train: pd.Series) -> Annotated[Pipeline, ArtifactConfig(name="sklearn_pipeline", is_model_artifact=True)]:
+def model_building_step(X_train: pd.DataFrame, y_train: pd.Series) -> Annotated[Pipeline, ArtifactConfig(name="sklearn_pipeline", artifact_type=ArtifactType.MODEL)]:
     experiment = Client().active_stack.experiment_tracker
     if experiment is None:
         raise RuntimeError("No experiment tracker configured on the active ZenML stack")

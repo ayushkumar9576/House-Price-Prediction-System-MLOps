@@ -14,7 +14,7 @@ from src.model_evaluator import ModelEvaluator, RegressionModelEvaluationStrateg
 logger = logging.getLogger(__name__)
 
 @step(enable_cache=False)
-def model_evaluator_step(trained_model: Pipeline, X_test: pd.DataFrame, y_test: pd.Series)-> Tuple[dict, float|None]:
+def model_evaluator_step(trained_model: Pipeline, X_test: pd.DataFrame, y_test: pd.Series)-> Tuple[float|None, float|None]:
     logger.info("Evaluating the trained model using ModelEvaluator and RegressionModelEvaluationStrategy")
 
     if not isinstance(X_test, pd.DataFrame):
@@ -29,7 +29,7 @@ def model_evaluator_step(trained_model: Pipeline, X_test: pd.DataFrame, y_test: 
 
     if not isinstance(evaluation_metrix,dict):
         raise ValueError("Evaluation metrics must be returned as a dictionary.")
-    
+
     mse = evaluation_metrix.get("Mean Squared Error", None)
     r2 = evaluation_metrix.get("R-Squared")
     return r2, mse
