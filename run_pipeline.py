@@ -3,6 +3,9 @@ PURPOSE:
     Command-line entry point that triggers the full ZenML training pipeline.
     After the pipeline finishes, it prints the MLflow tracking URI so you can
     inspect experiment runs in the MLflow UI.
+
+    HOW TO RUN:
+    python run_pipeline.py      (or: make train)
 """
 
 import click
